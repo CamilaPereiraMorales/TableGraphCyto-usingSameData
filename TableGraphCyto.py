@@ -11,15 +11,15 @@ df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/solar
 app = dash.Dash(__name__)
 
 app.config['suppress_callback_exceptions']=True
-
-
-for State in df.State:
-    print(State)
+ 
+usStates = df.State
+for States in usStates:
+ #   print(States)
 
     nodes = [
-        
+     
         {
-            'data': {'id': short, 'label': State},
+            'data': {'id': short, 'label': States},
             'position': {'x': Capacity, 'y': Generation}
         }
         for short, Generation, Capacity in (
@@ -61,17 +61,45 @@ app.layout = html.Div([
         selected_rows=[]
     ),
     html.Div(id='exampleGraph'),
-    #html.Div(id='cytoscape-update-layout')
-    cyto.Cytoscape(
-        id="cyto",
-        layout={'name':'breadthfirst'},
-        zoomingEnabled=False,
-        elements=elements
-    )
-
+    html.Div(id='update_layout')
+  
 
 ])
 
+@app.callback(Output('update_layout', 'children'),
+             [Input('table',"derived_virtual_data"),
+             Input('table',"derived_virtual_selected_rows")])
+
+def update_layout(rows,derived_virtual_selected_rows):
+    if derived_virtual_selected_rows is None:
+        derived_virtual_selected_rows = []
+
+    if rows is None:
+        dff = df
+    else:
+        dff = pd.DataFrame(rows)
+
+    colors = []
+    for i in range(len(dff)):
+        if i in derived_virtual_selected_rows:
+            colors.append("#7FDBFF")
+        else:
+            colors.append("#0074D9")
+
+    return html.Div(
+        [
+         cyto.Cytoscape(
+                id="cyto",
+                layout={'name':'breadthfirst'},
+                zoomingEnabled=False,
+                elements=elements,
+            )
+
+        
+        ])
+
+
+    
 @app.callback(
      Output('exampleGraph',"children"),
      [Input('table',"derived_virtual_data"),
@@ -109,16 +137,18 @@ def update_graph(rows,derived_virtual_selected_rows):
                         }
                     ]
                 }
-            )
+            ),
+        #  cyto.Cytoscape(
+        #         id="cyto",
+        #         layout={'name':'breadthfirst'},
+        #         zoomingEnabled=True,
+        #         elements=elements
+        #     )
+
         
         ])
 
-@app.callback(Output('cytoscape-update-layout', 'children'),
-              [Input('table', 'derived_virtual_selected_rows')])
-def update_layout(layout):
-    return {
-       'name': layout
-    }
+
 
 if __name__ == '__main__':
     app.run_server(debug=True)
