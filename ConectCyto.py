@@ -12,7 +12,8 @@ df.columns = [c.replace('(', '') for c in df.columns]
 df.columns = [c.replace(')', '') for c in df.columns]
 
 app = dash.Dash(__name__)
- 
+app.config['suppress_callback_exceptions']=True
+
 usStates = df.state
 #print(usStates)
 
@@ -101,53 +102,42 @@ def update_graph(rows,derived_virtual_selected_rows):
                     ]
                 }
             ),
-        #  cyto.Cytoscape(
-        #         id="cyto",
-        #         layout={'name':'breadthfirst'},
-        #         zoomingEnabled=True,
-        #         elements=elements
-        #     )
-
-        
-        ])
-        
-@app.callback(Output('update_layout', 'children'),
-             [Input('table',"derived_virtual_data"),
-             Input('table',"derived_virtual_selected_rows")])
-
-def update_layout(rows,derived_virtual_selected_rows):
-    if derived_virtual_selected_rows is None:
-        derived_virtual_selected_rows = []
-
-    if rows is None:
-        dff = df
-    else:
-        dff = pd.DataFrame(rows)
-
-    colors = []
-    for i in range(len(dff)):
-        if i in derived_virtual_selected_rows:
-            colors.append("#7FDBFF")
-        else:
-            colors.append("#0074D9")
-
-    return html.Div(
-        [
          cyto.Cytoscape(
-                id="cyto",
+                id="cytoscape-stylesheet-callbacks",
                 layout={'name':'circle'},
-                zoomingEnabled=False,
-                elements=elements,
-                # stylesheet=[
-                #     {
-                #         'selector':'node',
-                #         'style':colors
-                #     }
-                # ]
+                zoomingEnabled=True,
+                elements=elements
             )
 
         
         ])
+        
+@app.callback(Output('cytoscape-stylesheet-callbacks', 'stylesheet'),
+              [Input('input-line-color', 'value'),
+               Input('input-bg-color', 'value')])
+def update_stylesheet(line_color, bg_color):
+    if line_color is None:
+        line_color = ''
+
+    if bg_color is None:
+        bg_color = ''
+
+    new_styles = [
+        {
+            'selector': 'node',
+            'style': {
+                'background-color': bg_color
+            }
+        },
+        {
+            'selector': 'edge',
+            'style': {
+                'line-color': line_color
+            }
+        }
+    ]
+
+    return default_stylesheet + new_styles
 
 
 if __name__ == '__main__':
