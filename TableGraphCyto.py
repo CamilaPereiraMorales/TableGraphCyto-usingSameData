@@ -7,50 +7,44 @@ import dash_table
 import pandas as pd
 
 df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/solar.csv')
+df.columns = [c.lower().replace(' ', '_') for c in df.columns]
+df.columns = [c.replace('(', '') for c in df.columns]
+df.columns = [c.replace(')', '') for c in df.columns]
 
 app = dash.Dash(__name__)
-
-app.config['suppress_callback_exceptions']=True
  
-usStates = df.State
-for States in usStates:
- #   print(States)
+usStates = df.state
+print(usStates)
 
-    nodes = [
-     
-        {
-            'data': {'id': short, 'label': States},
-            'position': {'x': Capacity, 'y': Generation}
-        }
-        for short, Generation, Capacity in (
-            ('ca',  10826, 4395),
-            ('az',  2550, 1078),
-            ('nv',  557, -238),
-            ('nm', 590, 261),
-            ('col',  235, 118),
-            ('tex',  354, 187),
-            ('nc',  1162, 669),
-            ('nyc',  84, 53)
-        )
-    ]
+#    {'data': {'id': 'State', 'label': 'State'}, 'position': {'x': 0, 'y': 0}}
+
+nodes=[]
+for index, row in df.iterrows():
+    nodes.append({'data': {'id': row['state'], 'label': row['state']}, 'position': {'x': row['number_of_solar_plants'], 'y': row['installed_capacity_mw']}})
+
+print(nodes)
 
 edges = [
     {'data': {'source': source, 'target': target}}
     for source, target in (
-        ('ca', 'col'),
-        ('col', 'nv'),
-        ('tex', 'nm'),
-        ('tex', 'nm'),
-        ('nc', 'nyc'),
-        ('nyc', 'ca'),
-        ('nm', 'az'),
-        ('ca', 'nyc'),
-        ('az', 'nv'),
-        ('nyc', 'ca')
+        ('California', 'Colorado'),
+        ('Colorado', 'Nevada'),
+        ('Texas', 'New Mexico'),
+        ('Texas', 'New Mexico'),
+        ('North Carolina', 'New York'),
+        ('New York', 'California'),
+        ('New Mexico', 'Arizona'),
+        ('California', 'New York'),
+        ('Arizona', 'Nevada'),
+        ('New York', 'California')
     )
 ]
 
+
+
 elements = nodes + edges
+print(elements)
+
 
 app.layout = html.Div([
     dash_table.DataTable(
@@ -90,7 +84,7 @@ def update_layout(rows,derived_virtual_selected_rows):
         [
          cyto.Cytoscape(
                 id="cyto",
-                layout={'name':'breadthfirst'},
+                layout={'name':'circle'},
                 zoomingEnabled=False,
                 elements=elements,
             )
@@ -129,9 +123,9 @@ def update_graph(rows,derived_virtual_selected_rows):
                 figure={
                     "data": [
                         {
-                            "x": df['State'],
-                            "y": df["Number of Solar Plants"],
-                            "text": df["Average MW Per Plant"],
+                            "x": df['state'],
+                            "y": df["number_of_solar_plants"],
+                            "text": df["average_mw_per_plant"],
                             "type":"bar",
                             "marker":{"color":colors},              
                         }
